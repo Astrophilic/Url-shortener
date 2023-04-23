@@ -11,16 +11,31 @@ import java.util.Optional;
 @Service
 public class UrlService {
     private static final String BASE_URL = "https:/tinurl/";
-    private static final String BASE64_SET = "0123456789+/abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     @Autowired
     private UrlRepository urlRepository;
 
-    public String generateShortUrl(final String longUrl){
-        // encode the long url in base64
-        String encodedUrl = Base64.getUrlEncoder().encodeToString(longUrl.getBytes());
+    private static String toBase64(Long id){
 
-        String shortUrl = BASE_URL+encodedUrl;
+        // Convert the integer to base 64
+        StringBuilder sb = new StringBuilder();
+        while (id > 0) {
+            long remainder = id % 64;
+            sb.append(base64Chars.charAt((int)remainder));
+            id /= 64;
+        }
+
+        // Reverse the base 64 string and return it
+        return sb.reverse().toString();
+    }
+    public String generateShortUrl(final Long id){
+        // encode the long url in base64
+        String encodedUrl = toBase64(id);
+
+        int appendTimes= (encodedUrl.length()<7?7-encodedUrl.length():0);
+
+        String shortUrl = BASE_URL+encodedUrl+"=".repeat(appendTimes);
         return shortUrl;
 
 
@@ -34,4 +49,8 @@ public class UrlService {
         return urlRepository.save(url);
     }
 
+
+    public Optional<URL> findUrlByLongUrl(String longUrl) {
+        return urlRepository.findURLByLongUrl(longUrl);
+    }
 }
